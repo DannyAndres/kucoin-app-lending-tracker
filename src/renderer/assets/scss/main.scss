@@ -1,0 +1,32 @@
+
+// toast color
+.notices .snackbar {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04) !important;
+  background: rgba(15, 35, 65, 0.8) !important;
+  color: #58a6ff !important;
+  border: 1px solid #30363d !important;
+}
+
+.loading-background {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.select select, .taginput .taginput-container.is-focusable, .textarea, .input {
+  background-color: #161c22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 4px;
+  color: #a3a3a3;
+}
+
+.taginput .taginput-container.is-focusable, .textarea, .input {
+  box-shadow: none !important;
+}
+
+.b-checkbox.checkbox input[type=checkbox]:checked + .check {
+  background-color: rgba(#58a6ff, 0.5) !important;
+  border-color: rgba(#58a6ff, 0.5) !important;
+}
+
+.b-checkbox.checkbox:hover input[type=checkbox]:not(:disabled) + .check {
+  border-color: rgba(#58a6ff, 0.5) !important;
+}

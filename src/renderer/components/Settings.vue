@@ -464,21 +464,22 @@
               bizType: 'TRANSFER',
               direction: 'in'
             })
-            if (transferList.data && transferList.data.totalPage > 1) {
-              // add to transferList.data.items
-              for (let i = 2; i <= transferList.data.totalPage; i++) {
-                let temp = await API.rest.User.Account.getAccountLedgers({
-                  currency: 'USDT',
-                  bizType: 'TRANSFER',
-                  direction: 'in'
-                })
-                if (temp.data) {
-                  temp.data.items.forEach(item => {
-                    transferList.data.items.push(item)
-                  })
-                }
-              }
-            }
+            // if (transferList.data && transferList.data.totalPage > 1) {
+            //   // add to transferList.data.items
+            //   for (let i = 2; i <= transferList.data.totalPage; i++) {
+            //     let temp = await API.rest.User.Account.getAccountLedgers({
+            //       currency: 'USDT',
+            //       bizType: 'TRANSFER',
+            //       direction: 'in'
+            //     })
+            //     console.log(temp)
+            //     if (temp.data) {
+            //       temp.data.items.forEach(item => {
+            //         transferList.data.items.push(item)
+            //       })
+            //     }
+            //   }
+            // }
             transferList = transferList.data.items.filter(item => item.accountType === 'MAIN')
             this.transferList = transferList.map(item => {
               return {

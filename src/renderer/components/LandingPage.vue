@@ -618,7 +618,20 @@
             this.getLends = await API.rest.User.Account.getAccountLedgers()
             this.getAccountList = await API.rest.User.Account.getAccountsList()
             this.depositList = await API.rest.User.Deposit.getDepositList()
-            this.lendData = await API.rest.Margin.BorrowAndLend.getActiveLendOrdersList()
+            this.lendData = await API.rest.Margin.BorrowAndLend.getActiveLendOrdersList('USDT')
+            if (this.lendData.data && this.lendData.data.totalPage > 1) {
+              // add to this.lendData.data.items
+              for (let i = 2; i <= this.lendData.data.totalPage; i++) {
+                let temp = await API.rest.Margin.BorrowAndLend.getActiveLendOrdersList('USDT', {
+                  currentPage: i
+                })
+                if (temp.data) {
+                  temp.data.items.forEach(item => {
+                    this.lendData.data.items.push(item)
+                  })
+                }
+              }
+            }
             this.marketData = await API.rest.Margin.BorrowAndLend.getLendingMarketData('USDT')
             this.repayData = await API.rest.Margin.BorrowAndLend.getSettledLendOrderHistory('USDT', {})
             if (this.repayData.data && this.repayData.data.totalPage > 1) {
@@ -648,7 +661,20 @@
             this.getLends = await API.rest.User.Account.getAccountLedgers()
             this.getAccountList = await API.rest.User.Account.getAccountsList()
             this.depositList = await API.rest.User.Deposit.getDepositList()
-            this.lendData = await API.rest.Margin.BorrowAndLend.getActiveLendOrdersList()
+            this.lendData = await API.rest.Margin.BorrowAndLend.getActiveLendOrdersList('USDT')
+            if (this.lendData.data && this.lendData.data.totalPage > 1) {
+              // add to this.lendData.data.items
+              for (let i = 2; i <= this.lendData.data.totalPage; i++) {
+                let temp = await API.rest.Margin.BorrowAndLend.getActiveLendOrdersList('USDT', {
+                  currentPage: i
+                })
+                if (temp.data) {
+                  temp.data.items.forEach(item => {
+                    this.lendData.data.items.push(item)
+                  })
+                }
+              }
+            }
             this.marketData = await API.rest.Margin.BorrowAndLend.getLendingMarketData('USDT')
             this.repayData = await API.rest.Margin.BorrowAndLend.getSettledLendOrderHistory('USDT', {})
             if (this.repayData.data && this.repayData.data.totalPage > 1) {

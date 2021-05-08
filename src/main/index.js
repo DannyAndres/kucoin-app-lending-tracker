@@ -25,9 +25,9 @@ function createWindow () {
     resizable: false,
     title: 'Lending Tracker',
     backgroundColor: '#0d1117',
-    height: 700,
+    height: 1000,
     useContentSize: true,
-    width: 1200,
+    width: 1500,
     nodeIntegration: true
   })
 

@@ -1,6 +1,6 @@
 <template>
   <div id="chart">
-    <apexchart ref="realtimeChartDaily" type="candlestick" height="400" :options="chartOptions" :series="series"></apexchart>
+    <apexchart ref="realtimeChartDaily" type="candlestick" height="500" :options="chartOptions" :series="series"></apexchart>
   </div>
 </template>
 
@@ -18,7 +18,7 @@
         }],
         chartOptions: {
           chart: {
-            height: 350,
+            height: 500,
             type: 'candlestick',
             toolbar: {
               show: true,
@@ -36,7 +36,7 @@
             }
           },
           title: {
-            text: 'Daily earnings w/ fees',
+            text: 'Recorded Daily earnings w/ fees',
             align: 'left',
             style: {
               color: '#8b949e'

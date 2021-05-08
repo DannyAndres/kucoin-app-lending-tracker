@@ -1,25 +1,31 @@
 <template>
   <div id="chart">
-    <apexchart ref="realtimeChartPercentages" type="candlestick" height="450" :options="chartOptions" :series="series"></apexchart>
+    <div class="mb-4 padding-horizontal tile is-child no-bg-box notification-box box">
+      <div class="notification-element">
+        <span class="notification-number">Yearly Average APY<br><small><small>w / o fees</small></small></span>
+      </div>
+    </div>
+    <apexchart ref="realtimeChartTotal" height="300" type="bar" :options="chartOptions" :series="series"></apexchart>
   </div>
 </template>
 
 <script>
-  var dayjs = require('dayjs')
   const os = require('os')
   const low = require('lowdb')
   const FileSync = require('lowdb/adapters/FileSync')
+  const API = require('kucoin-node-sdk')
   export default {
     data () {
       return {
+        lendData: null,
         series: [{
-          name: 's-1',
+          name: '%',
           data: []
         }],
         chartOptions: {
           chart: {
-            height: 450,
-            type: 'candlestick',
+            height: 300,
+            type: 'bar',
             toolbar: {
               show: true,
               offsetX: 0,
@@ -35,8 +41,12 @@
               autoSelected: 'zoom'
             }
           },
+          stroke: {
+            width: 2,
+            curve: 'smooth'
+          },
           title: {
-            text: 'Recorded APY (7 days) w/ fees',
+            text: '%',
             align: 'left',
             style: {
               color: '#8b949e'
@@ -69,7 +79,7 @@
             type: 'category',
             labels: {
               formatter: function (val) {
-                return dayjs(val).format('DD MMM YYYY')
+                return val
               },
               style: {
                 colors: '#595f65'
@@ -77,7 +87,7 @@
             }
           },
           yaxis: {
-            seriesName: 's-1',
+            seriesName: 'amount',
             opposite: true,
             tooltip: {
               enabled: true
@@ -156,126 +166,100 @@
           }
         }
       },
-      updatingToast () {
-        this.$buefy.snackbar.open({
-          duration: 5000,
-          message: `Updating <b>APY (7 days)</b> chart data`,
-          type: 'is-success',
-          position: 'is-bottom-left',
-          actionText: null,
-          queue: false
-        })
-      },
-      initData () {
-        const adapter = new FileSync(os.homedir() + '/db.json')
-        const db = low(adapter)
+      async initData () {
+        const adapter = new FileSync(os.homedir() + '/config.json')
+        const config = low(adapter)
 
-        db.defaults({
-          data: [],
-          updated_at: 0,
-          percentages: [],
-          total: [],
-          accrued: {
-            value: 0,
-            date: 0
+        config.defaults({
+          keys: {
+            baseUrl: 'https://api.kucoin.com',
+            apiAuth: {
+              key: '',
+              secret: '',
+              passphrase: ''
+            },
+            authVersion: 2
           },
-          payments: []
+          settings: {
+            update: 5,
+            goal: 10,
+            cryptograph: false
+          }
         }).write()
 
-        var percentages = db.get('percentages').value()
-        var percentagesTemp = this.reOrderData(percentages)
-        if (percentagesTemp.length > 365) {
-          percentages = []
-          percentagesTemp.forEach((item, index) => {
-            if (index >= (percentagesTemp.length - 365)) {
-              percentages.push(item)
+        var keys = config.get('keys').value()
+        API.init(keys)
+
+        this.lendData = await API.rest.Margin.BorrowAndLend.getSettledLendOrderHistory('USDT')
+        if (this.lendData.data && this.lendData.data.totalPage > 1) {
+          // add to this.lendData.data.items
+          for (let i = 2; i <= this.lendData.data.totalPage; i++) {
+            let temp = await API.rest.Margin.BorrowAndLend.getSettledLendOrderHistory('USDT', {
+              currentPage: i
+            })
+            if (temp.data) {
+              temp.data.items.forEach(item => {
+                this.lendData.data.items.push(item)
+              })
+            }
+          }
+        }
+
+        var graphData = []
+        var currentYear = 0
+        function compare (a, b) {
+          if (a.settledAt < b.settledAt) {
+            return -1
+          }
+          if (a.settledAt > b.settledAt) {
+            return 1
+          }
+          return 0
+        }
+        if (this.lendData.data && this.lendData.data.items) {
+          this.lendData.data.items.sort(compare).forEach(lend => {
+            let year = new Date(lend.settledAt).getFullYear()
+            if (graphData.length === 0 || year !== graphData[graphData.length - 1].x) {
+              // divide the last one
+              if (graphData.length !== 0) {
+                graphData[graphData.length - 1] = {
+                  x: graphData[graphData.length - 1].x,
+                  y: (graphData[graphData.length - 1].y / currentYear).round(3)
+                }
+              }
+              // create a new one
+              graphData.push({
+                x: year,
+                y: ((parseFloat(lend.dailyIntRate) - (parseFloat(lend.dailyIntRate) * 0.15)) * 365 * 100)
+              })
+              currentYear = 1
+            } else {
+              graphData[graphData.length - 1] = {
+                x: graphData[graphData.length - 1].x,
+                y: graphData[graphData.length - 1].y + ((parseFloat(lend.dailyIntRate) - (parseFloat(lend.dailyIntRate) * 0.15)) * 365 * 100)
+              }
+              currentYear += 1
             }
           })
-        } else {
-          percentages = percentagesTemp
+
+          if (graphData.length !== 0) {
+            graphData[graphData.length - 1] = {
+              x: graphData[graphData.length - 1].x,
+              y: (graphData[graphData.length - 1].y / currentYear).round(3)
+            }
+            this.replaceAnno((graphData[graphData.length - 1].y).round(3), '#2e792e')
+          }
         }
-        if (percentages.length > 0) {
-          // open high low close
-          var last = percentages[percentages.length - 1].y
-          this.replaceAnno(last[3], (last[3] >= last[0]) ? '#2e792e' : '#b93636')
-        }
-        this.series[0].data = percentages
-        this.$refs.realtimeChartPercentages.updateSeries([{
+
+        this.series[0].data = graphData
+        this.$refs.realtimeChartTotal.updateSeries([{
           data: this.series[0].data
         }], false, true)
-      },
-      reOrderData (array) {
-        var roundNumber = function (number, places) {
-          return +(Math.round(number + 'e+' + places) + 'e-' + places)
-        }
-
-        let basket = []
-        let stringDate = ''
-        array.forEach(item => {
-          let tempStringDate = ''
-          let a = new Date(item.date)
-          a.setHours(0)
-          a.setMinutes(0)
-          a.setSeconds(0)
-          tempStringDate = (a.getUTCDate()) + '-' + (a.getUTCMonth() + 1) + '-' + (a.getUTCFullYear())
-          if (tempStringDate !== stringDate) {
-            basket.push([])
-            basket[basket.length - 1].push(item)
-            stringDate = tempStringDate
-          } else {
-            basket[basket.length - 1].push(item)
-          }
-        })
-  
-        // basket is now an array of all the values per day
-        var output = []
-  
-        basket.forEach(item => {
-          // open high low close
-          let date = null
-          let graphItem = [0, 0, null, 0]
-          item.forEach((value, index) => {
-            // open
-            if (index === 0) {
-              graphItem[0] = value.value
-              date = new Date(value.date)
-            }
-            // close
-            if (index === item.length - 1) {
-              graphItem[3] = value.value
-            }
-            // high
-            if (graphItem[1] < value.value) {
-              graphItem[1] = value.value
-            }
-            // low
-            if (graphItem[2] === null || graphItem[2] > value.value) {
-              graphItem[2] = value.value
-            }
-          })
-          if (graphItem[2] === null) {
-            graphItem[2] = 0
-          }
-          if (date === null) {
-            date = new Date(0)
-          }
-          graphItem = graphItem.map(e => {
-            e = roundNumber(e, 3)
-            return e
-          })
-          output.push({
-            x: date,
-            y: graphItem
-          })
-        })
-
-        return output
       }
     },
     watch: {
       update () {
         if (this.update) {
-          this.updatingToast()
           this.initData()
         }
       }
@@ -292,5 +276,8 @@
 </script>
 
 <style lang="scss" scoped>
-
+.mb-4 {
+  padding-bottom: 40px !important;
+  border: 0px transparent !important;
+}
 </style>

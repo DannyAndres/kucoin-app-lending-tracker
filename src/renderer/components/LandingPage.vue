@@ -28,12 +28,14 @@
               </div>
             </div>
           </div>
-          <div class="tile is-4 is-vertical is-parent">
+          <div class="tile is-5 is-vertical is-parent">
             <div class="tile is-child new-box box">
-              <p v-if="auth" class="subtitle text-center">
-                <span class="first-center">
+              <p v-if="auth" class="subtitle text-center mb-0">
+                <span>
                   <span class="span">Daily </span>{{ daily }}<small class="small">USDT</small>
                 </span>
+              </p>
+              <p v-if="auth" class="subtitle text-center">
                 <span>
                   <span class="span">Earned </span>{{ earn }}<small class="small">USDT</small>
                 </span>
@@ -56,8 +58,8 @@
                   <span class="self-second">{{ main.lent }}</span>
                 </div>
                 <div class="self-item">
-                  <span class="self-first">orders ( total past ) ( active )</span>
-                  <span class="self-second">{{ pastOrders }} / {{ lendData.data.totalNum }}</span>
+                  <span class="self-first">orders ( active )</span>
+                  <span class="self-second">{{ lendData.data.totalNum }}</span>
                 </div>
                 <div class="self-item">
                   <span class="self-first">first deposit date</span>
@@ -145,14 +147,18 @@
     </main>
     <main class="second-main">
         <div class="tile is-ancestor">
-          <div class="tile is-parent">
-            <div class="tile is-child new-box box">
-              <totalchart v-if="updateGraph"/>
+          <div class="tile is-12 is-parent">
+            <div class="tile is-child no-bg-box box">
+              <projectionchart :c="c" :apy="apy" :days="7" :years="1" v-if="updateGraph"/>
             </div>
           </div>
-          <div class="tile is-parent">
-            <div class="tile is-child new-box box">
-              <projectionchart :c="c" :apy="apy" :days="7" :years="1" v-if="updateGraph"/>
+        </div>
+    </main>
+    <main class="second-main">
+        <div class="tile is-ancestor">
+          <div class="tile is-12 is-parent">
+            <div class="tile is-child no-bg-box box">
+              <dailyapygraph v-if="updateGraph"/>
             </div>
           </div>
         </div>
@@ -172,6 +178,29 @@
           </div>
         </div>
     </main>
+    <main class="second-main">
+        <div class="tile is-ancestor">
+          <div class="tile is-6 is-parent">
+            <div class="tile is-child no-bg-box box">
+              <apygraph v-if="updateGraph"/>
+            </div>
+          </div>
+          <div class="tile is-6 is-parent">
+            <div class="tile is-child no-bg-box box">
+              <lastapygraph v-if="updateGraph"/>
+            </div>
+          </div>
+        </div>
+    </main>
+    <main class="second-main">
+        <div class="tile is-ancestor">
+          <div class="tile is-parent">
+            <div class="tile is-child no-bg-box box">
+              <paygraph v-if="updateGraph"/>
+            </div>
+          </div>
+        </div>
+    </main>
   </div>
 </template>
 
@@ -179,6 +208,11 @@
   import Navbar from './LandingPage/Navbar'
   import Candlechart from './LandingPage/Candlechart'
   import Totalchart from './LandingPage/Totalchart'
+  import Apygraph from './LandingPage/Apygraph'
+  import Dailygraph from './LandingPage/Dailygraph'
+  import Dailyapygraph from './LandingPage/Dailyapygraph'
+  import Lastapygraph from './LandingPage/Lastapygraph'
+  import Paygraph from './LandingPage/Paygraph'
   import Projectionchart from './LandingPage/Projectionchart'
   import Dailychart from './LandingPage/Dailychart'
   import Cryptochart from './LandingPage/Cryptochart'
@@ -194,6 +228,11 @@
       Navbar,
       Candlechart,
       Totalchart,
+      Apygraph,
+      Dailygraph,
+      Dailyapygraph,
+      Paygraph,
+      Lastapygraph,
       Dailychart,
       Cryptochart,
       Cryptoprices,
@@ -483,7 +522,7 @@
           accrued: (accrued.round(3)).toString(),
           accruednofees: ((accrued - (accrued * 0.15)).round(3)).toString(),
           paid: ((moneyBackTotal - originalSize).round(3)).toString(),
-          percentage: (((((balance - lended) - ((balance - lended) - (moneyBackTotal - originalSize))) * 100) / ((balance - lended) - (moneyBackTotal - originalSize))).round(3)).toString() + '%'
+          percentage: ((((moneyBackTotal - originalSize) + (accrued - (accrued * 0.15))) * 100) / ((balance - lended) - (moneyBackTotal - originalSize))).round(3).toString() + '%'
         }
 
         this.payments = [
@@ -513,7 +552,14 @@
           }
         ]
 
-        this.apy = ((dailyPercentage * 365 * 100) - ((dailyPercentage * 365 * 100) * 0.15))
+        let totalDailyInRate = 0
+        this.repayData.data.items.forEach(lend => {
+          totalDailyInRate += ((parseFloat(lend.dailyIntRate) - (parseFloat(lend.dailyIntRate) * 0.15)) * 100 * 365)
+        })
+        totalDailyInRate = (totalDailyInRate / this.repayData.data.items.length).round(3)
+        // current -> this.apy = ((dailyPercentage * 365 * 100) - ((dailyPercentage * 365 * 100) * 0.15))
+        // average from past lending
+        this.apy = totalDailyInRate
 
         this.market = market
 

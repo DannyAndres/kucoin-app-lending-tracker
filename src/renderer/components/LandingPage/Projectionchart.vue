@@ -1,19 +1,31 @@
 <template>
   <div id="chart">
-    <div v-if="chartData.length !== 0" class="no-border padding-horizontal tile is-child new-box notification-box box">
+    <div v-if="chartData.length !== 0" class="no-border padding-horizontal tile is-child no-bg-box notification-box box">
       <div v-for="(item, index) in chartData" :key="index" class="notification-element">
-        <span class="notification-number">{{ item.value }}<small><small> usdt <br>{{ item.daily }} a day<br>{{ item.percentage }}% total</small></small></span>
+        <span class="notification-number">{{ item.value }}<small><small> usdt <br>{{ item.daily }} a day<br>{{ item.monthly }} a month<br>{{ item.percentage }}% total</small></small></span>
         <br>
         <span class="notification-text">{{ item.name }} <small><small>years</small></small></span>
       </div>
     </div>
-    <div v-else class="no-border padding-horizontal tile is-child new-box notification-box box">
+    <div v-else class="no-border padding-horizontal tile is-child no-bg-box notification-box box">
       <div class="notification-element">
         <span class="notification-number">Projections <br><small><small>loading ...</small></small></span>
       </div>
     </div>
-    <apexchart ref="realtimeChartProjection" height="400" type="line" :options="chartOptions" :series="series"></apexchart>
-    <apexchart ref="realtimeChartYears" height="400" type="line" :options="chartOptions2" :series="series2"></apexchart>
+    <main class="second-main">
+        <div class="tile is-ancestor">
+          <div class="tile is-6 is-parent">
+            <div class="tile is-child">
+              <apexchart ref="realtimeChartProjection" height="400" type="line" :options="chartOptions" :series="series"></apexchart>
+            </div>
+          </div>
+          <div class="tile is-6 is-parent">
+            <div class="tile is-child">
+              <apexchart ref="realtimeChartYears" height="400" type="line" :options="chartOptions2" :series="series2"></apexchart>
+            </div>
+          </div>
+        </div>
+    </main>
   </div>
 </template>
 
@@ -46,7 +58,7 @@
       return {
         chartData: [],
         series: [{
-          name: 'amount',
+          name: 'usdt',
           data: []
         }],
         series2: [{
@@ -81,7 +93,7 @@
             curve: 'smooth'
           },
           title: {
-            text: 'Projection on ' + this.years + ' year with current w / o fees ' + this.apy + '% apy',
+            text: 'Projection on ' + this.years + ' year with past average w / o fees ' + this.apy + '% apy',
             align: 'left',
             style: {
               color: '#8b949e'
@@ -106,7 +118,7 @@
             }
           },
           yaxis: {
-            seriesName: 'amount',
+            seriesName: 'usdt',
             opposite: true,
             tooltip: {
               enabled: true
@@ -297,24 +309,28 @@
           name: '2',
           value: compound(this.c, this.apy / divider, 2 * divider).round(1),
           daily: (compound(this.c, this.apy / divider, 2 * divider) * ((this.apy / 365) / 100)).round(2),
+          monthly: ((compound(this.c, this.apy / divider, 2 * divider) * ((this.apy / 365) / 100)) * 30).round(2),
           percentage: (((compound(this.c, this.apy / divider, 2 * divider) * 100) / this.c) - 100).round(2)
         })
         this.chartData.push({
           name: '5',
           value: compound(this.c, this.apy / divider, 5 * divider).round(1),
           daily: (compound(this.c, this.apy / divider, 5 * divider) * ((this.apy / 365) / 100)).round(2),
+          monthly: ((compound(this.c, this.apy / divider, 5 * divider) * ((this.apy / 365) / 100)) * 30).round(2),
           percentage: (((compound(this.c, this.apy / divider, 5 * divider) * 100) / this.c) - 100).round(2)
         })
         this.chartData.push({
           name: '10',
           value: compound(this.c, this.apy / divider, 10 * divider).round(1),
           daily: (compound(this.c, this.apy / divider, 10 * divider) * ((this.apy / 365) / 100)).round(2),
+          monthly: ((compound(this.c, this.apy / divider, 10 * divider) * ((this.apy / 365) / 100)) * 30).round(2),
           percentage: (((compound(this.c, this.apy / divider, 10 * divider) * 100) / this.c) - 100).round(2)
         })
         this.chartData.push({
           name: '20',
           value: compound(this.c, this.apy / divider, 20 * divider).round(1),
           daily: (compound(this.c, this.apy / divider, 20 * divider) * ((this.apy / 365) / 100)).round(2),
+          monthly: ((compound(this.c, this.apy / divider, 20 * divider) * ((this.apy / 365) / 100)) * 30).round(2),
           percentage: (((compound(this.c, this.apy / divider, 20 * divider) * 100) / this.c) - 100).round(2)
         })
         percentages = percentages.map(item => {
@@ -344,7 +360,7 @@
             })
           }
         }
-        this.chartOptions.title.text = 'Projection on ' + this.years + ' year with current w / o fees ' + this.apy.round(1) + '% apy'
+        this.chartOptions.title.text = 'Projection on ' + this.years + ' year with past average w / o fees ' + this.apy + '% apy'
         this.replaceAnno(percentages[percentages.length - 1].y, '#2e792e')
         this.series[0].data = percentages
         this.$refs.realtimeChartProjection.updateSeries([{
